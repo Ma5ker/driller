@@ -135,7 +135,7 @@ class Driller(object):
         t = angr.exploration_techniques.Tracer(trace=r.trace, crash_addr=r.crash_addr, copy_states=True)
         self._core = angr.exploration_techniques.DrillerCore(trace=r.trace, fuzz_bitmap=self.fuzz_bitmap)
 
-        simgr.use_technique(t)
+        simgr.use_technique(t)#simgr step到程序的entry point
         simgr.use_technique(angr.exploration_techniques.Oppologist())
         simgr.use_technique(self._core)
 
@@ -144,8 +144,9 @@ class Driller(object):
         l.debug("Drilling into %r.", self.input)
         l.debug("Input is %r.", self.input)
 
+        #此时的simgr.one_active.globals['trace_idx']为步入到entry point的步数
         while simgr.active and simgr.one_active.globals['trace_idx'] < len(r.trace) - 1:
-            simgr.step()
+            simgr.step()   #  --> bug here;need fix
 
             # Check here to see if a crash has been found.
             if self.redis and self.redis.sismember(self.identifier + '-finished', True):
