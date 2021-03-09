@@ -84,7 +84,7 @@ class Driller(object):
         if self.redis:
             self.redis.sadd(self.identifier + '-traced', self.input)
 
-        list(self._drill_input()) #  启动driller 获取新生成的输出
+        t = list(self._drill_input()) #  启动driller 获取新生成的输出
 
         if self.redis:
             return len(self._generated)
@@ -123,10 +123,10 @@ class Driller(object):
 
             s = p.factory.entry_state(stdin=angr.SimFileStream, flag_page=r.magic, mode='tracing')
         else:
-            s = p.factory.full_init_state(stdin=angr.SimFileStream, mode='tracing')
+            s = p.factory.full_init_state(stdin=angr.SimFileStream,mode='tracing', args=self.argv)
+            # s = p.factory.entry_state(stdin=angr.SimFileStream, mode='tracing',args=[p.filename,"placeholder"])
         #预约束
         s.preconstrainer.preconstrain_file(self.input, s.posix.stdin, True)
-
         simgr = p.factory.simulation_manager(s, save_unsat=True, hierarchy=False, save_unconstrained=r.crash_mode)
         #trace Oppologist和DrillerCore三种探索技术
         # trace ：按给定trace进行符号执行
@@ -149,8 +149,8 @@ class Driller(object):
             simgr.step()   #  --> bug here;need fix
 
             # Check here to see if a crash has been found.
-            if self.redis and self.redis.sismember(self.identifier + '-finished', True):
-                return
+            # if self.redis and self.redis.sismember(self.identifier + '-finished', True):
+            #     return
 
             if 'diverted' not in simgr.stashes:
                 continue
@@ -251,8 +251,9 @@ class Driller(object):
 
     def _writeout(self, prev_addr, state):
         #求解此状态输出
-        generated = state.posix.stdin.load(0, state.posix.stdin.pos)
-        generated = state.solver.eval(generated, cast_to=bytes)
+        #generated = state.posix.stdin.load(0, state.posix.stdin.pos)
+        #generated = state.solver.eval(generated, cast_to=bytes)
+        generated = state.fs.get("1.txt").concretize()
         #输出长度,前一基本块的地址,此状态地址 
         key = (len(generated), prev_addr, state.addr)
 

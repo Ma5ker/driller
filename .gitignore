@@ -1,3 +1,10 @@
 *.pyc
 *.swp
 *.egg-info
+/test_dir/
+/angr/
+/tracer/
+/.vscode
+tmp*
+tracer-log*
+main_test.py
